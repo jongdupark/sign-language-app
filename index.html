@@ -138,12 +138,22 @@
     // index.html 내의 fetchWord 함수 교체
     async function fetchWord() {
         try {
-            // 외부 우회 서버 대신, 내가 만든 안전한 Vercel 서버로 요청합니다.
             const response = await fetch('/api/word');
-            if (!response.ok) throw new Error("내 서버 응답 오류");
+            
+            // 내 Vercel 서버에서 에러를 뿜으면 그 원인을 읽어옵니다.
+            if (!response.ok) {
+                const errorJson = await response.json();
+                throw new Error(`Vercel 서버 에러: ${errorJson.error}`);
+            }
             
             const textData = await response.text();
             
+            // 국립국어원 자체 에러 (예: 키 오류, 권한 없음 등)
+            if (textData.includes("<error>")) {
+                console.error("국립국어원 에러 원문:", textData);
+                throw new Error("국립국어원 API 자체 에러 (한도초과 또는 설정 오류)");
+            }
+
             const parser = new DOMParser();
             const xmlDoc = parser.parseFromString(textData, "text/xml");
             const items = xmlDoc.getElementsByTagName("item");
@@ -154,10 +164,12 @@
                 word = word.replace(/[^가-힣]/g, ''); 
                 if (word) return word;
             }
-            return "기찻길"; 
+            
+            throw new Error("사전에서 조건에 맞는 단어를 찾지 못했습니다.");
+
         } catch (error) {
-            console.error("통신 실패 상세 원인:", error);
-            // 에러 시 기존에 알려드린 폴백 단어장 로직을 여기에 넣어도 좋습니다.
+            // 원인을 정확히 파악하기 위해 경고창을 띄웁니다.
+            alert("❌ API 통신 실패 원인:\n" + error.message);
             return "기찻길"; 
         }
     }
@@ -238,4 +250,5 @@
     }
 </script>
 </body>
+
 </html>
