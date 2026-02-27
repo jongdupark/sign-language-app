@@ -2,122 +2,132 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="지문자 마스터">
-    <link rel="apple-touch-icon" href="icon.png">
-    
     <title>지문자 마스터</title>
     <style>
         :root {
-            --bg-color: #1E1E1E;
-            --card-color: #2D2D30;
-            --text-color: #D4D4D4;
-            --accent-color: #0A84FF;
+            --bg-color: #000000; /* 완전 검은색 배경 */
+            --card-color: #1C1C1E; /* iOS 다크모드 카드색 */
+            --text-color: #E5E5E7;
+            --accent-color: #0A84FF; /* iOS Blue */
+            --danger-color: #FF453A; /* iOS Red */
         }
         body {
             background-color: var(--bg-color); color: var(--text-color);
-            font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", sans-serif;
-            margin: 0; padding: 20px;
+            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+            margin: 0; padding: 10px 15px 20px 15px; /* 상하단 패딩 조정 */
             display: flex; flex-direction: column; align-items: center;
-            height: 100vh; overflow: hidden; box-sizing: border-box;
+            /* iOS 동적 뷰포트 높이 대응하여 화면 꽉 채우기 */
+            height: 100dvh; overflow: hidden; box-sizing: border-box;
         }
         .container {
-            width: 100%; max-width: 400px;
-            display: flex; flex-direction: column; gap: 15px;
+            width: 100%; height: 100%; /* 최대 너비 제한 제거 및 높이 꽉 채우기 */
+            display: flex; flex-direction: column; gap: 10px;
         }
-        /* 설정 컨트롤 그룹 스타일 */
+        /* 상단 컨트롤 영역 소형화 */
         .control-row {
-            display: flex; justify-content: space-between; gap: 10px;
+            display: flex; justify-content: space-between; gap: 8px;
         }
         .control-group {
-            display: flex; align-items: center; gap: 8px; flex: 1;
-            background-color: var(--card-color); padding: 8px 12px;
-            border-radius: 10px; border: 1px solid #3E3E42;
+            display: flex; align-items: center; gap: 5px; flex: 1;
+            background-color: var(--card-color); padding: 6px 10px;
+            border-radius: 10px; font-size: 13px;
         }
-        .control-group label { font-weight: bold; font-size: 14px; white-space: nowrap; }
-        input[type="range"] { flex-grow: 1; }
-        /* 드롭다운 스타일 */
+        .control-group label { font-weight: 600; white-space: nowrap; }
+        input[type="range"] { flex-grow: 1; height: 4px; }
         select {
-            flex-grow: 1; padding: 8px; border-radius: 6px;
-            border: 1px solid #555; background-color: #3E3E42; color: white;
-            font-size: 14px; -webkit-appearance: none; appearance: none;
-            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
-            background-repeat: no-repeat; background-position: right 8px center; background-size: 16px;
+            flex-grow: 1; padding: 6px; border-radius: 6px; border: none;
+            background-color: #2C2C2E; color: white; font-size: 13px;
+            -webkit-appearance: none; appearance: none;
+            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+            background-repeat: no-repeat; background-position: right 8px center;
         }
         
-        .btn-group { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .btn-group { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
         button {
-            background-color: var(--card-color); color: var(--text-color);
-            border: 1px solid #3E3E42; border-radius: 10px; padding: 12px;
-            font-size: 16px; font-weight: bold; cursor: pointer;
-            transition: background-color 0.2s;
+            background-color: var(--card-color); color: var(--accent-color);
+            border: none; border-radius: 10px; padding: 10px;
+            font-size: 15px; font-weight: 600; cursor: pointer;
         }
-        button.primary { background-color: var(--accent-color); color: white; border: none; }
+        button.primary { background-color: var(--accent-color); color: white; }
         button:active { opacity: 0.7; }
         
+        /* 메인 카드 영역 - 남은 공간 모두 차지하도록 설정 */
         .card {
-            background-color: var(--card-color); border-radius: 15px;
-            border: 1px solid #3E3E42; padding: 20px;
-            display: flex; flex-direction: column; align-items: center; gap: 15px; flex-grow: 1; justify-content: center;
+            background-color: var(--card-color); border-radius: 18px; padding: 15px;
+            display: flex; flex-direction: column; align-items: center; gap: 10px;
+            flex-grow: 1; /* 중요: 남은 세로 공간을 모두 차지 */
+            justify-content: space-between; overflow: hidden;
         }
-        /* 이미지 표시 영역 스타일 개선 */
-        .image-display {
-            width: 250px; height: 250px;
-            display: flex; justify-content: center; align-items: center;
-            font-size: 50px; font-weight: bold;
-            background-color: #1E1E1E; border-radius: 15px; overflow: hidden;
-            text-align: center; word-break: keep-all; border: 2px solid #3E3E42;
-        }
-        /* 실제 이미지가 들어갈 태그 스타일 */
-        .image-display img { width: 100%; height: 100%; object-fit: contain; }
         
-        .input-group { display: flex; width: 100%; gap: 10px; }
-        input[type="text"] {
-            flex-grow: 1; padding: 12px; border-radius: 8px;
-            border: 2px solid #3E3E42; background-color: var(--bg-color); color: white;
-            font-size: 16px;
+        /* 이미지 표시 영역 - 꽉 차게 */
+        .image-wrapper {
+            width: 100%; flex-grow: 1; /* 부모 안에서 꽉 차게 */
+            display: flex; justify-content: center; align-items: center;
+            background-color: #000; border-radius: 12px;
+            overflow: hidden; position: relative; min-height: 0; /* flex 자식 오버플로우 방지 */
         }
-        input[type="text"]:focus { border-color: var(--accent-color); outline: none; }
-        #feedback { font-size: 18px; font-weight: bold; height: 24px; }
+        
+        /* 실제 이미지가 표시될 태그 */
+        #mainImage {
+            width: 100%; height: 100%;
+            object-fit: contain; /* 비율 유지하며 꽉 차게 */
+            display: none; /* 초기엔 숨김 */
+        }
+        /* 이미지가 없을 때 표시될 텍스트 */
+        #placeholderText {
+            position: absolute; width: 100%; text-align: center;
+            font-size: 24px; color: #8E8E93; font-weight: bold;
+        }
+        /* 에러 발생 시 큰 글자용 클래스 */
+        .large-text { font-size: 120px !important; color: white !important; }
+
+        .input-group { display: flex; width: 100%; gap: 8px; margin-top: auto; }
+        input[type="text"] {
+            flex-grow: 1; padding: 12px; border-radius: 10px; border: none;
+            background-color: #2C2C2E; color: white; font-size: 17px;
+        }
+        input[type="text"]:focus { outline: 2px solid var(--accent-color); }
+        #feedback { font-size: 17px; font-weight: bold; height: 24px; text-align: center; }
     </style>
 </head>
 <body>
 
 <div class="container">
     <div class="control-row">
-        <div class="control-group">
+        <div class="control-group" style="flex: 1.2;">
             <label>속도</label>
-            <input type="range" id="speedSlider" min="200" max="2000" value="500">
-            <span id="speedVal" style="font-size: 12px; min-width: 45px; text-align: right;">500ms</span>
+            <input type="range" id="speedSlider" min="200" max="1500" value="500" step="50">
+            <span id="speedVal" style="font-size: 12px; min-width: 40px; text-align: right;">500ms</span>
         </div>
         <div class="control-group">
-            <label>길이</label>
             <select id="lengthSelect">
-                <option value="any">랜덤</option>
-                <option value="2">2글자</option>
-                <option value="3">3글자</option>
-                <option value="4">4글자</option>
+                <option value="2-3">2~3글자(랜덤)</option>
+                <option value="3-4">3~4글자</option>
+                <option value="5+">5글자 이상</option>
             </select>
         </div>
     </div>
 
     <div class="btn-group">
-        <button class="primary" onclick="startNewWord()">새로운 단어</button>
-        <button onclick="replayWord()">다시 보기</button>
+        <button class="primary" onclick="startNewWord()" style="grid-column: span 2;">새로운 단어 시작</button>
         <button id="pauseBtn" onclick="togglePause()">일시정지</button>
-        <button onclick="showHistory()">기록 보기</button>
     </div>
 
     <div class="card">
-        <div class="image-display" id="imageDisplay">대기 중</div>
-        
-        <div class="input-group">
-            <input type="text" id="answerInput" placeholder="정답을 입력하세요" autocomplete="off">
-            <button class="primary" onclick="checkAnswer()">확인</button>
+        <div class="image-wrapper" id="imageWrapper">
+            <img id="mainImage" alt="수어 이미지">
+            <span id="placeholderText">시작 버튼을<br>눌러주세요</span>
         </div>
+        
         <div id="feedback"></div>
+
+        <div class="input-group">
+            <input type="text" id="answerInput" placeholder="정답 입력" autocomplete="off" enterkeyhint="done">
+            <button class="primary" onclick="checkAnswer()" style="padding: 0 20px;">확인</button>
+        </div>
     </div>
 </div>
 
@@ -127,19 +137,22 @@
     let currentIdx = 0;
     let timer = null;
     let isPaused = false;
-    let historyData = JSON.parse(localStorage.getItem('fingerspell_history')) || [];
+    
+    // 이미지 프리로딩을 위한 큐
+    let imageQueue = [];
 
-    // 플랜 B: API 실패시 사용할 예비 단어장 (길이별로 분류)
+    // 새롭게 정의된 자체 단어장 (범위별)
     const fallbackWords = {
-        '2': ["사과", "포도", "학교", "바다", "하늘", "우주", "의자", "연필", "가방", "신발", "시계", "사진", "구름", "바람", "태양", "가족", "친구", "사랑", "행복", "운동", "수영", "축구", "야구", "농구", "등산", "여행", "음악", "기차", "버스", "택시"],
-        '3': ["컴퓨터", "자전거", "도서관", "박물관", "경찰서", "소방서", "선생님", "카메라", "냉장고", "세탁기", "청소기", "자동차", "지하철", "신호등", "놀이터", "피아노", "바이올린", "기타등등", "비행기", "아파트"],
-        '4': ["대한민국", "우리나라", "아이스크림", "텔레비전", "엘리베이터", "에스컬레이터", "스마트폰", "편의점", "동물원", "식물원", "미술관", "과학관", "체육관", "운동장", "수영장", "도서관", "박물관"]
+        '2-3': ["사과","포도","학교","바다","하늘","우주","의자","연필","가방","신발","시계","사진","구름","바람","태양","가족","친구","사랑","행복","운동","수영","축구","야구","농구","여행","음악","기차","버스","택시","경찰","소방","병원","은행","우체국","식당","카페","동물","식물","컴퓨터","자전거","피아노","비행기"],
+        '3-4': ["컴퓨터","자전거","도서관","박물관","경찰서","소방서","선생님","카메라","냉장고","세탁기","청소기","자동차","지하철","신호등","놀이터","피아노","비행기","아파트","우체국","편의점","대학교","유치원","운동장","수영장","미술관","과학관","체육관","영화관","동물원","식물원","대한민국","우리나라","아이스크림","텔레비전","엘리베이터"],
+        '5+': ["대한민국","아이스크림","텔레비전","엘리베이터","에스컬레이터","스마트폰","편의점","동물원","식물원","미술관","과학관","체육관","운동장","수영장","도서관","박물관","경찰서","소방서","주민센터","보건소"]
     };
 
-    const CHOSUNG = ['ㄱ', 'ㄲ', 'ㄴ', 'ㄷ', 'ㄸ', 'ㄹ', 'ㅁ', 'ㅂ', 'ㅃ', 'ㅅ', 'ㅆ', 'ㅇ', 'ㅈ', 'ㅉ', 'ㅊ', 'ㅋ', 'ㅌ', 'ㅍ', 'ㅎ'];
-    const JUNGSUNG = ['ㅏ', 'ㅐ', 'ㅑ', 'ㅒ', 'ㅓ', 'ㅔ', 'ㅕ', 'ㅖ', 'ㅗ', 'ㅘ', 'ㅙ', 'ㅚ', 'ㅛ', 'ㅜ', 'ㅝ', 'ㅞ', 'ㅟ', 'ㅠ', 'ㅡ', 'ㅢ', 'ㅣ'];
-    const JONGSUNG = ['', 'ㄱ', 'ㄲ', 'ㄳ', 'ㄴ', 'ㄵ', 'ㄶ', 'ㄷ', 'ㄹ', 'ㄺ', 'ㄻ', 'ㄼ', 'ㄽ', 'ㄾ', 'ㄿ', 'ㅀ', 'ㅁ', 'ㅂ', 'ㅄ', 'ㅅ', 'ㅆ', 'ㅇ', 'ㅈ', 'ㅊ', 'ㅋ', 'ㅌ', 'ㅍ', 'ㅎ'];
-    const COMPOUND = {'ㄳ':['ㄱ','ㅅ'], 'ㄵ':['ㄴ','ㅈ'], 'ㄶ':['ㄴ','ㅎ'], 'ㄺ':['ㄹ','ㄱ'], 'ㄻ':['ㄹ','ㅁ'], 'ㄼ':['ㄹ','ㅂ'], 'ㄽ':['ㄹ','ㅅ'], 'ㄾ':['ㄹ','ㅌ'], 'ㄿ':['ㄹ','ㅍ'], 'ㅀ':['ㄹ','ㅎ'], 'ㅄ':['ㅂ','ㅅ'], 'ㅘ':['ㅗ','ㅏ'], 'ㅙ':['ㅗ','ㅐ'], 'ㅝ':['ㅜ','ㅓ'], 'ㅞ':['ㅜ','ㅔ'], 'ㄲ':['ㄱ','ㄱ (2)'], 'ㄸ':['ㄷ','ㄷ (2)'], 'ㅃ':['ㅂ','ㅂ (2)'], 'ㅆ':['ㅅ','ㅅ (2)'], 'ㅉ':['ㅈ','ㅈ (2)']};
+    // 한글 분리 로직 (기존 동일)
+    const CHOSUNG = ['ㄱ','ㄲ','ㄴ','ㄷ','ㄸ','ㄹ','ㅁ','ㅂ','ㅃ','ㅅ','ㅆ','ㅇ','ㅈ','ㅉ','ㅊ','ㅋ','ㅌ','ㅍ','ㅎ'];
+    const JUNGSUNG = ['ㅏ','ㅐ','ㅑ','ㅒ','ㅓ','ㅔ','ㅕ','ㅖ','ㅗ','ㅘ','ㅙ','ㅚ','ㅛ','ㅜ','ㅝ','ㅞ','ㅟ','ㅠ','ㅡ','ㅢ','ㅣ'];
+    const JONGSUNG = ['','ㄱ','ㄲ','ㄳ','ㄴ','ㄵ','ㄶ','ㄷ','ㄹ','ㄺ','ㄻ','ㄼ','ㄽ','ㄾ','ㄿ','ㅀ','ㅁ','ㅂ','ㅄ','ㅅ','ㅆ','ㅇ','ㅈ','ㅊ','ㅋ','ㅌ','ㅍ','ㅎ'];
+    const COMPOUND = {'ㄳ':['ㄱ','ㅅ'],'ㄵ':['ㄴ','ㅈ'],'ㄶ':['ㄴ','ㅎ'],'ㄺ':['ㄹ','ㄱ'],'ㄻ':['ㄹ','ㅁ'],'ㄼ':['ㄹ','ㅂ'],'ㄽ':['ㄹ','ㅅ'],'ㄾ':['ㄹ','ㅌ'],'ㄿ':['ㄹ','ㅍ'],'ㅀ':['ㄹ','ㅎ'],'ㅄ':['ㅂ','ㅅ'],'ㅘ':['ㅗ','ㅏ'],'ㅙ':['ㅗ','ㅐ'],'ㅝ':['ㅜ','ㅓ'],'ㅞ':['ㅜ','ㅔ'],'ㄲ':['ㄱ','ㄱ'],'ㄸ':['ㄷ','ㄷ'],'ㅃ':['ㅂ','ㅂ'],'ㅆ':['ㅅ','ㅅ'],'ㅉ':['ㅈ','ㅈ']};
 
     function splitHangul(word) {
         let result = [];
@@ -150,120 +163,139 @@
                 let jung = Math.floor((code % 588) / 28);
                 let jong = code % 28;
                 [CHOSUNG[cho], JUNGSUNG[jung], JONGSUNG[jong]].forEach(unit => {
-                    if (unit) {
-                        if (COMPOUND[unit]) result.push(...COMPOUND[unit]);
-                        else result.push(unit);
-                    }
+                    if (unit && COMPOUND[unit]) result.push(...COMPOUND[unit]);
+                    else if (unit) result.push(unit);
                 });
             }
         }
         return result;
     }
 
+    // UI 이벤트 리스너
     const speedSlider = document.getElementById('speedSlider');
     const speedVal = document.getElementById('speedVal');
     speedSlider.addEventListener('input', (e) => speedVal.innerText = e.target.value + 'ms');
+    document.getElementById('answerInput').addEventListener('keypress', (e) => { if(e.key==='Enter') checkAnswer(); });
 
-    document.getElementById('answerInput').addEventListener('keypress', function (e) {
-        if (e.key === 'Enter') checkAnswer();
-    });
-
-    // [수정됨] 단어 가져오기 함수 (길이 필터링 적용)
+    // 단어 가져오기 (새로운 범위 필터 적용)
     async function fetchWord() {
-        const selectedLength = document.getElementById('lengthSelect').value;
-        const targetLen = selectedLength === 'any' ? null : parseInt(selectedLength);
+        const selectedRange = document.getElementById('lengthSelect').value;
+        let targetList = fallbackWords[selectedRange]; // 기본값: 자체 단어장
 
         try {
             const response = await fetch('/api/word');
-            if (!response.ok) throw new Error("Vercel 서버 통신 오류");
-            
+            if (!response.ok) throw new Error("서버 통신 오류");
             const textData = await response.text();
-            if (textData.includes("<error>")) throw new Error("API 한도 초과 또는 오류");
+            if (textData.includes("<error>")) throw new Error("API 오류");
 
             const parser = new DOMParser();
             const xmlDoc = parser.parseFromString(textData, "text/xml");
             const items = Array.from(xmlDoc.getElementsByTagName("item"));
 
-            // 가져온 단어 목록에서 순수 한글만 추출
-            let candidates = items.map(item => {
-                let w = item.getElementsByTagName("word")[0].textContent;
-                return w.replace(/[^가-힣]/g, '');
-            }).filter(w => w.length > 1); // 1글자 단어는 제외
+            let candidates = items.map(item => item.getElementsByTagName("word")[0].textContent.replace(/[^가-힣]/g, ''));
 
-            // 선택한 길이가 있으면 필터링
-            if (targetLen) {
-                candidates = candidates.filter(w => w.length === targetLen);
-            }
+            // 선택된 범위에 맞게 필터링
+            if (selectedRange === '2-3') candidates = candidates.filter(w => w.length >= 2 && w.length <= 3);
+            else if (selectedRange === '3-4') candidates = candidates.filter(w => w.length >= 3 && w.length <= 4);
+            else if (selectedRange === '5+') candidates = candidates.filter(w => w.length >= 5);
 
-            if (candidates.length > 0) {
-                // 후보 중에서 랜덤 선택
-                return candidates[Math.floor(Math.random() * candidates.length)];
-            }
-            
-            throw new Error(`조건(${selectedLength}글자)에 맞는 단어 없음`);
+            if (candidates.length > 0) return candidates[Math.floor(Math.random() * candidates.length)];
+            throw new Error("조건에 맞는 단어 없음");
 
         } catch (error) {
             console.warn("API 실패, 자체 단어장 사용:", error.message);
-            // 실패 시 선택한 길이에 맞는 예비 단어장에서 가져옴
-            let list = targetLen ? fallbackWords[targetLen.toString()] : [].concat(...Object.values(fallbackWords));
-            if (!list || list.length === 0) list = fallbackWords['2']; // 안전장치
-            return list[Math.floor(Math.random() * list.length)];
+            return targetList[Math.floor(Math.random() * targetList.length)];
         }
     }
 
     async function startNewWord() {
         clearInterval(timer);
-        const display = document.getElementById('imageDisplay');
-        display.innerHTML = "<span style='font-size:20px;'>단어<br>찾는 중...</span>";
-        
         document.getElementById('answerInput').value = "";
         document.getElementById('feedback').innerText = "";
         document.getElementById('pauseBtn').innerText = "일시정지";
-        
+        document.getElementById('mainImage').style.display = 'none';
+        document.getElementById('placeholderText').innerHTML = "단어 찾는 중...";
+        document.getElementById('placeholderText').classList.remove('large-text');
+        document.getElementById('placeholderText').style.display = 'block';
+
         currentWord = await fetchWord();
-        
-        // 이미지 표시를 위해 폰트 크기 초기화 필요 없음 (이미지 태그로 대체됨)
         jamoList = splitHangul(currentWord);
         currentIdx = 0;
         isPaused = false;
-        
-        showNextImage();
+        imageQueue = []; // 큐 초기화
+
+        // 첫 번째 이미지 프리로딩 시작
+        preloadNextImage();
     }
 
-    // [핵심 수정] 이미지를 표시하는 함수
+    // [핵심] 다음 이미지를 미리 불러오는 함수
+    function preloadNextImage() {
+        if (currentIdx >= jamoList.length) {
+            showNextImage(); // 끝났음을 알림
+            return;
+        }
+        
+        const char = jamoList[currentIdx];
+        const img = new Image();
+        img.src = `images/${char}.png`;
+        
+        // 이미지가 로드되면 큐에 넣고 표시 함수 호출
+        img.onload = () => {
+            imageQueue.push({ type: 'image', src: img.src, char: char });
+            if (imageQueue.length === 1) showNextImage();
+        };
+        // 이미지 에러 시 텍스트를 큐에 넣음
+        img.onerror = () => {
+            imageQueue.push({ type: 'text', char: char });
+             if (imageQueue.length === 1) showNextImage();
+        };
+    }
+
+    // [핵심] 준비된 이미지를 화면에 보여주는 함수 (깜빡임 제거)
     function showNextImage() {
         if (isPaused) return;
 
-        const display = document.getElementById('imageDisplay');
+        const mainImage = document.getElementById('mainImage');
+        const placeholder = document.getElementById('placeholderText');
+
         if (currentIdx < jamoList.length) {
-            let char = jamoList[currentIdx];
-            
-            // 실제 이미지 태그를 사용하여 이미지를 표시합니다.
-            // images 폴더가 index.html과 같은 위치에 있어야 합니다.
-            // onerror 이벤트: 이미지를 못 찾으면 텍스트로 글자를 보여줍니다.
-            display.innerHTML = `<img src="images/${char}.png" alt="${char}" onerror="this.style.display='none'; this.parentElement.innerHTML='<span style=\\'font-size:50px;\\'>${char}</span>'">`;
+            // 큐에 준비된 데이터가 없으면 대기 (프리로딩이 완료되면 다시 호출됨)
+            if (imageQueue.length === 0) return;
+
+            const data = imageQueue.shift(); // 큐에서 하나 꺼냄
+
+            if (data.type === 'image') {
+                // [중요] 이미지가 준비되었을 때만 src를 교체하여 깜빡임 방지
+                mainImage.src = data.src;
+                mainImage.alt = data.char;
+                mainImage.style.display = 'block';
+                placeholder.style.display = 'none';
+            } else {
+                // 이미지 로드 실패 시 텍스트 표시
+                mainImage.style.display = 'none';
+                placeholder.innerText = data.char;
+                placeholder.classList.add('large-text');
+                placeholder.style.display = 'block';
+            }
             
             currentIdx++;
+            // 다음 이미지 미리 로딩 시작
+            preloadNextImage();
             timer = setTimeout(showNextImage, speedSlider.value);
         } else {
-            // 입력 대기 상태 표시
-            display.innerHTML = "<span style='font-size:30px;'>입력<br>대기 중</span>";
+            // 끝났을 때
+            mainImage.style.display = 'none';
+            placeholder.innerHTML = "입력 대기 중";
+            placeholder.classList.remove('large-text');
+            placeholder.style.display = 'block';
         }
     }
 
     function togglePause() {
         isPaused = !isPaused;
         document.getElementById('pauseBtn').innerText = isPaused ? "재생" : "일시정지";
-        if (!isPaused) showNextImage();
+        if (!isPaused && imageQueue.length > 0) showNextImage();
         else clearTimeout(timer);
-    }
-
-    function replayWord() {
-        if (currentWord) {
-            currentIdx = 0;
-            clearTimeout(timer);
-            showNextImage();
-        }
     }
 
     function checkAnswer() {
@@ -275,17 +307,9 @@
         let feedback = document.getElementById('feedback');
         
         feedback.innerText = isCorrect ? "정답입니다!" : `오답! 정답: ${currentWord}`;
-        feedback.style.color = isCorrect ? "#4CAF50" : "#FF5252";
+        feedback.style.color = isCorrect ? "#32D74B" : "#FF453A"; // iOS Green/Red
         
-        if(isCorrect) ansInput.blur(); // 정답이면 키보드 내리기
-        
-        historyData.push({ word: currentWord, status: isCorrect ? "정답" : "오답" });
-        localStorage.setItem('fingerspell_history', JSON.stringify(historyData));
-    }
-
-    function showHistory() {
-        let historyStr = historyData.map(item => `[${item.status}] ${item.word}`).reverse().join('\n');
-        alert("학습 기록 (최근순):\n\n" + (historyStr || "기록이 없습니다."));
+        if(isCorrect) ansInput.blur();
     }
 </script>
 </body>
