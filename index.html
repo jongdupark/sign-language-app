@@ -8,28 +8,26 @@
     <title>지문자 마스터</title>
     <style>
         :root {
-            --bg-color: #000000; /* 완전 검은색 배경 */
-            --card-color: #1C1C1E; /* iOS 다크모드 카드색 */
+            --bg-color: #000000;
+            --card-color: #1C1C1E;
             --text-color: #E5E5E7;
-            --accent-color: #0A84FF; /* iOS Blue */
-            --danger-color: #FF453A; /* iOS Red */
+            --accent-color: #0A84FF;
+            --danger-color: #FF453A;
+            --success-color: #32D74B;
         }
         body {
             background-color: var(--bg-color); color: var(--text-color);
             font-family: -apple-system, BlinkMacSystemFont, sans-serif;
-            margin: 0; padding: 10px 15px 20px 15px; /* 상하단 패딩 조정 */
-            display: flex; flex-direction: column; align-items: center;
-            /* iOS 동적 뷰포트 높이 대응하여 화면 꽉 채우기 */
+            margin: 0; padding: env(safe-area-inset-top) 15px 20px 15px;
             height: 100dvh; overflow: hidden; box-sizing: border-box;
         }
-        .container {
-            width: 100%; height: 100%; /* 최대 너비 제한 제거 및 높이 꽉 채우기 */
-            display: flex; flex-direction: column; gap: 10px;
-        }
-        /* 상단 컨트롤 영역 소형화 */
-        .control-row {
-            display: flex; justify-content: space-between; gap: 8px;
-        }
+        
+        /* 뷰 컨트롤 (메인 vs 기록 화면 전환용) */
+        .view { display: none; width: 100%; height: 100%; flex-direction: column; gap: 10px; }
+        .view.active { display: flex; }
+
+        /* --- 메인 화면 스타일 --- */
+        .control-row { display: flex; justify-content: space-between; gap: 8px; }
         .control-group {
             display: flex; align-items: center; gap: 5px; flex: 1;
             background-color: var(--card-color); padding: 6px 10px;
@@ -45,43 +43,28 @@
             background-repeat: no-repeat; background-position: right 8px center;
         }
         
+        /* 버튼 3개 동일 크기 배치 */
         .btn-group { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
         button {
             background-color: var(--card-color); color: var(--accent-color);
-            border: none; border-radius: 10px; padding: 10px;
-            font-size: 15px; font-weight: 600; cursor: pointer;
+            border: none; border-radius: 10px; padding: 12px 5px;
+            font-size: 14px; font-weight: bold; cursor: pointer; text-align: center;
         }
         button.primary { background-color: var(--accent-color); color: white; }
         button:active { opacity: 0.7; }
         
-        /* 메인 카드 영역 - 남은 공간 모두 차지하도록 설정 */
         .card {
             background-color: var(--card-color); border-radius: 18px; padding: 15px;
             display: flex; flex-direction: column; align-items: center; gap: 10px;
-            flex-grow: 1; /* 중요: 남은 세로 공간을 모두 차지 */
-            justify-content: space-between; overflow: hidden;
+            flex-grow: 1; justify-content: space-between; overflow: hidden;
         }
         
-        /* 이미지 표시 영역 - 꽉 차게 */
         .image-wrapper {
-            width: 100%; flex-grow: 1; /* 부모 안에서 꽉 차게 */
-            display: flex; justify-content: center; align-items: center;
-            background-color: #000; border-radius: 12px;
-            overflow: hidden; position: relative; min-height: 0; /* flex 자식 오버플로우 방지 */
+            width: 100%; flex-grow: 1; display: flex; justify-content: center; align-items: center;
+            background-color: #000; border-radius: 12px; overflow: hidden; position: relative;
         }
-        
-        /* 실제 이미지가 표시될 태그 */
-        #mainImage {
-            width: 100%; height: 100%;
-            object-fit: contain; /* 비율 유지하며 꽉 차게 */
-            display: none; /* 초기엔 숨김 */
-        }
-        /* 이미지가 없을 때 표시될 텍스트 */
-        #placeholderText {
-            position: absolute; width: 100%; text-align: center;
-            font-size: 24px; color: #8E8E93; font-weight: bold;
-        }
-        /* 에러 발생 시 큰 글자용 클래스 */
+        #mainImage { width: 100%; height: 100%; object-fit: contain; display: none; }
+        #placeholderText { position: absolute; width: 100%; text-align: center; font-size: 24px; color: #8E8E93; font-weight: bold; }
         .large-text { font-size: 120px !important; color: white !important; }
 
         .input-group { display: flex; width: 100%; gap: 8px; margin-top: auto; }
@@ -91,11 +74,34 @@
         }
         input[type="text"]:focus { outline: 2px solid var(--accent-color); }
         #feedback { font-size: 17px; font-weight: bold; height: 24px; text-align: center; }
+
+        /* --- 기록 화면 스타일 --- */
+        .history-header {
+            display: flex; align-items: center; padding: 10px 0; border-bottom: 1px solid #3E3E42;
+        }
+        .history-header button {
+            background: none; border: none; color: var(--accent-color); font-size: 16px; padding: 5px 15px 5px 0; text-align: left;
+        }
+        .history-header h2 { margin: 0; flex-grow: 1; text-align: center; font-size: 18px; padding-right: 40px; }
+        
+        .history-list {
+            list-style: none; padding: 0; margin: 0; overflow-y: auto; flex-grow: 1;
+        }
+        .history-item {
+            background-color: var(--card-color); margin-bottom: 8px; border-radius: 10px;
+            padding: 15px; display: flex; justify-content: space-between; align-items: center;
+            cursor: pointer;
+        }
+        .history-item:active { opacity: 0.7; }
+        .history-word { font-size: 18px; font-weight: bold; }
+        .history-status { font-size: 14px; font-weight: bold; padding: 4px 8px; border-radius: 6px; }
+        .status-correct { background-color: rgba(50, 215, 75, 0.2); color: var(--success-color); }
+        .status-wrong { background-color: rgba(255, 69, 58, 0.2); color: var(--danger-color); }
     </style>
 </head>
 <body>
 
-<div class="container">
+<div id="mainView" class="view active">
     <div class="control-row">
         <div class="control-group" style="flex: 1.2;">
             <label>속도</label>
@@ -112,8 +118,9 @@
     </div>
 
     <div class="btn-group">
-        <button class="primary" onclick="startNewWord()" style="grid-column: span 2;">새로운 단어 시작</button>
-        <button id="pauseBtn" onclick="togglePause()">일시정지</button>
+        <button class="primary" onclick="startNewWord()">새 단어</button>
+        <button id="playPauseBtn" onclick="togglePlayPause()">일시정지</button>
+        <button onclick="showHistoryView()">기록</button>
     </div>
 
     <div class="card">
@@ -131,24 +138,31 @@
     </div>
 </div>
 
+<div id="historyView" class="view">
+    <div class="history-header">
+        <button onclick="hideHistoryView()">❮ 뒤로</button>
+        <h2>학습 기록</h2>
+    </div>
+    <ul class="history-list" id="historyList">
+        </ul>
+</div>
+
 <script>
     let currentWord = "";
     let jamoList = [];
+    let cachedFrames = []; // 미리 불러온 이미지/텍스트 데이터를 저장할 배열
     let currentIdx = 0;
     let timer = null;
     let isPaused = false;
-    
-    // 이미지 프리로딩을 위한 큐
-    let imageQueue = [];
+    let isFinished = false; // 재생이 끝났는지 여부
+    let historyData = JSON.parse(localStorage.getItem('fingerspell_history')) || [];
 
-    // 새롭게 정의된 자체 단어장 (범위별)
     const fallbackWords = {
-        '2-3': ["사과","포도","학교","바다","하늘","우주","의자","연필","가방","신발","시계","사진","구름","바람","태양","가족","친구","사랑","행복","운동","수영","축구","야구","농구","여행","음악","기차","버스","택시","경찰","소방","병원","은행","우체국","식당","카페","동물","식물","컴퓨터","자전거","피아노","비행기"],
-        '3-4': ["컴퓨터","자전거","도서관","박물관","경찰서","소방서","선생님","카메라","냉장고","세탁기","청소기","자동차","지하철","신호등","놀이터","피아노","비행기","아파트","우체국","편의점","대학교","유치원","운동장","수영장","미술관","과학관","체육관","영화관","동물원","식물원","대한민국","우리나라","아이스크림","텔레비전","엘리베이터"],
-        '5+': ["대한민국","아이스크림","텔레비전","엘리베이터","에스컬레이터","스마트폰","편의점","동물원","식물원","미술관","과학관","체육관","운동장","수영장","도서관","박물관","경찰서","소방서","주민센터","보건소"]
+        '2-3': ["사과","포도","학교","바다","하늘","우주","의자","연필","가방","신발","사진","구름","가족","친구","사랑","운동","수영","기차","버스","경찰","병원","식당","동물","피아노"],
+        '3-4': ["컴퓨터","자전거","도서관","박물관","경찰서","소방서","선생님","카메라","냉장고","세탁기","자동차","지하철","신호등","놀이터","우체국","편의점","대학교","운동장","수영장","미술관"],
+        '5+': ["대한민국","아이스크림","텔레비전","엘리베이터","에스컬레이터","스마트폰","동물원","식물원","과학관","주민센터","보건소"]
     };
 
-    // 한글 분리 로직 (기존 동일)
     const CHOSUNG = ['ㄱ','ㄲ','ㄴ','ㄷ','ㄸ','ㄹ','ㅁ','ㅂ','ㅃ','ㅅ','ㅆ','ㅇ','ㅈ','ㅉ','ㅊ','ㅋ','ㅌ','ㅍ','ㅎ'];
     const JUNGSUNG = ['ㅏ','ㅐ','ㅑ','ㅒ','ㅓ','ㅔ','ㅕ','ㅖ','ㅗ','ㅘ','ㅙ','ㅚ','ㅛ','ㅜ','ㅝ','ㅞ','ㅟ','ㅠ','ㅡ','ㅢ','ㅣ'];
     const JONGSUNG = ['','ㄱ','ㄲ','ㄳ','ㄴ','ㄵ','ㄶ','ㄷ','ㄹ','ㄺ','ㄻ','ㄼ','ㄽ','ㄾ','ㄿ','ㅀ','ㅁ','ㅂ','ㅄ','ㅅ','ㅆ','ㅇ','ㅈ','ㅊ','ㅋ','ㅌ','ㅍ','ㅎ'];
@@ -171,20 +185,18 @@
         return result;
     }
 
-    // UI 이벤트 리스너
     const speedSlider = document.getElementById('speedSlider');
     const speedVal = document.getElementById('speedVal');
     speedSlider.addEventListener('input', (e) => speedVal.innerText = e.target.value + 'ms');
     document.getElementById('answerInput').addEventListener('keypress', (e) => { if(e.key==='Enter') checkAnswer(); });
 
-    // 단어 가져오기 (새로운 범위 필터 적용)
     async function fetchWord() {
         const selectedRange = document.getElementById('lengthSelect').value;
-        let targetList = fallbackWords[selectedRange]; // 기본값: 자체 단어장
+        let targetList = fallbackWords[selectedRange]; 
 
         try {
             const response = await fetch('/api/word');
-            if (!response.ok) throw new Error("서버 통신 오류");
+            if (!response.ok) throw new Error("서버 오류");
             const textData = await response.text();
             if (textData.includes("<error>")) throw new Error("API 오류");
 
@@ -193,97 +205,83 @@
             const items = Array.from(xmlDoc.getElementsByTagName("item"));
 
             let candidates = items.map(item => item.getElementsByTagName("word")[0].textContent.replace(/[^가-힣]/g, ''));
-
-            // 선택된 범위에 맞게 필터링
             if (selectedRange === '2-3') candidates = candidates.filter(w => w.length >= 2 && w.length <= 3);
             else if (selectedRange === '3-4') candidates = candidates.filter(w => w.length >= 3 && w.length <= 4);
             else if (selectedRange === '5+') candidates = candidates.filter(w => w.length >= 5);
 
             if (candidates.length > 0) return candidates[Math.floor(Math.random() * candidates.length)];
             throw new Error("조건에 맞는 단어 없음");
-
         } catch (error) {
-            console.warn("API 실패, 자체 단어장 사용:", error.message);
             return targetList[Math.floor(Math.random() * targetList.length)];
         }
     }
 
-    async function startNewWord() {
-        clearInterval(timer);
-        document.getElementById('answerInput').value = "";
-        document.getElementById('feedback').innerText = "";
-        document.getElementById('pauseBtn').innerText = "일시정지";
-        document.getElementById('mainImage').style.display = 'none';
-        document.getElementById('placeholderText').innerHTML = "단어 찾는 중...";
-        document.getElementById('placeholderText').classList.remove('large-text');
-        document.getElementById('placeholderText').style.display = 'block';
+    // ★ 모든 이미지를 100% 로드한 뒤에 배열로 반환하는 함수
+    function preloadAllImages(jamoArray) {
+        return Promise.all(jamoArray.map(char => {
+            return new Promise(resolve => {
+                const img = new Image();
+                img.src = `images/${char}.png`;
+                img.onload = () => resolve({ type: 'image', src: img.src, char: char });
+                img.onerror = () => resolve({ type: 'text', char: char });
+            });
+        }));
+    }
 
+    async function startNewWord() {
+        if(timer) clearInterval(timer);
+        resetUIForLoading("단어 찾는 중...");
+        
         currentWord = await fetchWord();
         jamoList = splitHangul(currentWord);
+        
+        document.getElementById('placeholderText').innerHTML = "이미지<br>불러오는 중...";
+        
+        // ★ 백그라운드에서 모든 프레임을 캐싱할 때까지 대기
+        cachedFrames = await preloadAllImages(jamoList);
+        
+        playFromStart();
+    }
+
+    function playFromStart() {
+        if(timer) clearInterval(timer);
         currentIdx = 0;
         isPaused = false;
-        imageQueue = []; // 큐 초기화
-
-        // 첫 번째 이미지 프리로딩 시작
-        preloadNextImage();
+        isFinished = false;
+        
+        updatePlayButtonUI();
+        
+        // 첫 프레임 즉시 보여주고, 타이머 시작 (정확한 간격 유지)
+        renderFrame();
+        timer = setInterval(renderFrame, speedSlider.value);
     }
 
-    // [핵심] 다음 이미지를 미리 불러오는 함수
-    function preloadNextImage() {
-        if (currentIdx >= jamoList.length) {
-            showNextImage(); // 끝났음을 알림
-            return;
-        }
-        
-        const char = jamoList[currentIdx];
-        const img = new Image();
-        img.src = `images/${char}.png`;
-        
-        // 이미지가 로드되면 큐에 넣고 표시 함수 호출
-        img.onload = () => {
-            imageQueue.push({ type: 'image', src: img.src, char: char });
-            if (imageQueue.length === 1) showNextImage();
-        };
-        // 이미지 에러 시 텍스트를 큐에 넣음
-        img.onerror = () => {
-            imageQueue.push({ type: 'text', char: char });
-             if (imageQueue.length === 1) showNextImage();
-        };
-    }
-
-    // [핵심] 준비된 이미지를 화면에 보여주는 함수 (깜빡임 제거)
-    function showNextImage() {
-        if (isPaused) return;
+    // 박자에 맞춰 화면에 프레임을 그리는 순수 렌더링 함수
+    function renderFrame() {
+        if (isPaused || isFinished) return;
 
         const mainImage = document.getElementById('mainImage');
         const placeholder = document.getElementById('placeholderText');
 
-        if (currentIdx < jamoList.length) {
-            // 큐에 준비된 데이터가 없으면 대기 (프리로딩이 완료되면 다시 호출됨)
-            if (imageQueue.length === 0) return;
-
-            const data = imageQueue.shift(); // 큐에서 하나 꺼냄
-
-            if (data.type === 'image') {
-                // [중요] 이미지가 준비되었을 때만 src를 교체하여 깜빡임 방지
-                mainImage.src = data.src;
-                mainImage.alt = data.char;
+        if (currentIdx < cachedFrames.length) {
+            const frame = cachedFrames[currentIdx];
+            if (frame.type === 'image') {
+                mainImage.src = frame.src;
                 mainImage.style.display = 'block';
                 placeholder.style.display = 'none';
             } else {
-                // 이미지 로드 실패 시 텍스트 표시
                 mainImage.style.display = 'none';
-                placeholder.innerText = data.char;
+                placeholder.innerText = frame.char;
                 placeholder.classList.add('large-text');
                 placeholder.style.display = 'block';
             }
-            
             currentIdx++;
-            // 다음 이미지 미리 로딩 시작
-            preloadNextImage();
-            timer = setTimeout(showNextImage, speedSlider.value);
         } else {
-            // 끝났을 때
+            // 재생 완료
+            clearInterval(timer);
+            isFinished = true;
+            updatePlayButtonUI();
+            
             mainImage.style.display = 'none';
             placeholder.innerHTML = "입력 대기 중";
             placeholder.classList.remove('large-text');
@@ -291,11 +289,48 @@
         }
     }
 
-    function togglePause() {
-        isPaused = !isPaused;
-        document.getElementById('pauseBtn').innerText = isPaused ? "재생" : "일시정지";
-        if (!isPaused && imageQueue.length > 0) showNextImage();
-        else clearTimeout(timer);
+    // 재생/일시정지/다시보기 버튼 로직
+    function togglePlayPause() {
+        if (isFinished) {
+            // 끝났으면 다시 보기
+            playFromStart();
+        } else {
+            // 진행 중이면 일시정지/재생 토글
+            isPaused = !isPaused;
+            updatePlayButtonUI();
+        }
+    }
+
+    function updatePlayButtonUI() {
+        const btn = document.getElementById('playPauseBtn');
+        if (isFinished) {
+            btn.innerText = "다시 보기";
+            btn.style.backgroundColor = "var(--success-color)";
+            btn.style.color = "black";
+        } else if (isPaused) {
+            btn.innerText = "재생";
+            btn.style.backgroundColor = "var(--success-color)";
+            btn.style.color = "black";
+        } else {
+            btn.innerText = "일시정지";
+            btn.style.backgroundColor = "var(--card-color)";
+            btn.style.color = "var(--accent-color)";
+        }
+    }
+
+    function resetUIForLoading(text) {
+        document.getElementById('answerInput').value = "";
+        document.getElementById('feedback').innerText = "";
+        document.getElementById('mainImage').style.display = 'none';
+        
+        const placeholder = document.getElementById('placeholderText');
+        placeholder.innerHTML = text;
+        placeholder.classList.remove('large-text');
+        placeholder.style.display = 'block';
+        
+        isFinished = false;
+        isPaused = false;
+        updatePlayButtonUI();
     }
 
     function checkAnswer() {
@@ -307,9 +342,63 @@
         let feedback = document.getElementById('feedback');
         
         feedback.innerText = isCorrect ? "정답입니다!" : `오답! 정답: ${currentWord}`;
-        feedback.style.color = isCorrect ? "#32D74B" : "#FF453A"; // iOS Green/Red
+        feedback.style.color = isCorrect ? "var(--success-color)" : "var(--danger-color)";
         
         if(isCorrect) ansInput.blur();
+        
+        historyData.push({ word: currentWord, status: isCorrect ? "정답" : "오답" });
+        localStorage.setItem('fingerspell_history', JSON.stringify(historyData));
+    }
+
+    // --- 뷰 전환 및 기록 관련 기능 ---
+    function showHistoryView() {
+        document.getElementById('mainView').classList.remove('active');
+        document.getElementById('historyView').classList.add('active');
+        renderHistoryList();
+    }
+
+    function hideHistoryView() {
+        document.getElementById('historyView').classList.remove('active');
+        document.getElementById('mainView').classList.add('active');
+    }
+
+    function renderHistoryList() {
+        const list = document.getElementById('historyList');
+        list.innerHTML = '';
+        
+        if (historyData.length === 0) {
+            list.innerHTML = '<li style="text-align:center; color:#8E8E93; padding: 20px;">기록이 없습니다.</li>';
+            return;
+        }
+
+        // 최신순으로 정렬하여 표시
+        [...historyData].reverse().forEach(item => {
+            const li = document.createElement('li');
+            li.className = 'history-item';
+            
+            // 기록 클릭 시 해당 단어로 바로 재생하는 이벤트 추가
+            li.onclick = () => playWordFromHistory(item.word);
+            
+            const statusClass = item.status === '정답' ? 'status-correct' : 'status-wrong';
+            li.innerHTML = `
+                <span class="history-word">${item.word} <span style="font-size: 12px; font-weight: normal; color: #8E8E93;">(클릭하여 재생)</span></span>
+                <span class="history-status ${statusClass}">${item.status}</span>
+            `;
+            list.appendChild(li);
+        });
+    }
+
+    // 기록에서 특정 단어를 클릭했을 때 실행되는 함수
+    async function playWordFromHistory(word) {
+        hideHistoryView(); // 메인 화면으로 돌아가기
+        if(timer) clearInterval(timer);
+        resetUIForLoading("이미지<br>불러오는 중...");
+        
+        currentWord = word;
+        jamoList = splitHangul(currentWord);
+        
+        cachedFrames = await preloadAllImages(jamoList);
+        playFromStart();
     }
 </script>
 </body>
