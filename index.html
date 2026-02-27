@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <title>지문자 마스터</title>
+    <title>지문자 마스터 퀘스트</title>
     <link rel="manifest" href="/manifest.json">
     <link rel="apple-touch-icon" href="/aa.png">
     <style>
@@ -16,36 +16,33 @@
             --accent-color: #0A84FF;
             --danger-color: #FF453A;
             --success-color: #32D74B;
+            --warning-color: #FFD60A;
         }
         body {
             background-color: var(--bg-color); color: var(--text-color);
             font-family: -apple-system, BlinkMacSystemFont, sans-serif;
             margin: 0; padding: env(safe-area-inset-top) 15px 20px 15px;
             height: 100dvh; overflow: hidden; box-sizing: border-box;
+            position: relative;
         }
         
-        /* 뷰 컨트롤 (메인 vs 기록 화면 전환용) */
         .view { display: none; width: 100%; height: 100%; flex-direction: column; gap: 10px; }
         .view.active { display: flex; }
 
-        /* --- 메인 화면 스타일 --- */
-        .control-row { display: flex; justify-content: space-between; gap: 8px; }
-        .control-group {
-            display: flex; align-items: center; gap: 5px; flex: 1;
-            background-color: var(--card-color); padding: 6px 10px;
-            border-radius: 10px; font-size: 13px;
+        /* --- 게임 대시보드 (상단) --- */
+        .game-dashboard {
+            display: flex; justify-content: space-between; gap: 10px;
         }
-        .control-group label { font-weight: 600; white-space: nowrap; }
-        input[type="range"] { flex-grow: 1; height: 4px; }
-        select {
-            flex-grow: 1; padding: 6px; border-radius: 6px; border: none;
-            background-color: #2C2C2E; color: white; font-size: 13px;
-            -webkit-appearance: none; appearance: none;
-            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
-            background-repeat: no-repeat; background-position: right 8px center;
+        .stat-box {
+            flex: 1; background-color: var(--card-color); padding: 12px 10px;
+            border-radius: 12px; text-align: center; border: 1px solid #3E3E42;
+            display: flex; flex-direction: column; gap: 4px;
         }
-        
-        /* 버튼 3개 동일 크기 배치 */
+        .stat-title { font-size: 12px; color: #8E8E93; font-weight: bold; }
+        .stat-value { font-size: 18px; font-weight: 800; color: white; }
+        .level-text { color: var(--warning-color); }
+
+        /* 버튼 그룹 */
         .btn-group { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
         button {
             background-color: var(--card-color); color: var(--accent-color);
@@ -55,6 +52,7 @@
         button.primary { background-color: var(--accent-color); color: white; }
         button:active { opacity: 0.7; }
         
+        /* 메인 카드 */
         .card {
             background-color: var(--card-color); border-radius: 18px; padding: 15px;
             display: flex; flex-direction: column; align-items: center; gap: 10px;
@@ -77,24 +75,26 @@
         input[type="text"]:focus { outline: 2px solid var(--accent-color); }
         #feedback { font-size: 17px; font-weight: bold; height: 24px; text-align: center; }
 
-        /* --- 기록 화면 스타일 --- */
-        .history-header {
-            display: flex; align-items: center; padding: 10px 0; border-bottom: 1px solid #3E3E42;
+        /* --- 게임 오버 / 레벨업 모달 --- */
+        #gameModal {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background-color: rgba(0, 0, 0, 0.85); backdrop-filter: blur(5px);
+            display: none; flex-direction: column; justify-content: center; align-items: center;
+            z-index: 100; text-align: center; padding: 20px; box-sizing: border-box;
         }
-        .history-header button {
-            background: none; border: none; color: var(--accent-color); font-size: 16px; padding: 5px 15px 5px 0; text-align: left;
+        #modalTitle { font-size: 40px; font-weight: 900; margin-bottom: 10px; }
+        #modalDesc { font-size: 18px; color: #D4D4D4; margin-bottom: 30px; line-height: 1.5; }
+        #modalBtn {
+            background-color: white; color: black; padding: 15px 40px;
+            font-size: 18px; border-radius: 30px; border: none; font-weight: bold;
         }
+
+        /* 기록 화면 스타일 (기존 동일) */
+        .history-header { display: flex; align-items: center; padding: 10px 0; border-bottom: 1px solid #3E3E42; }
+        .history-header button { background: none; border: none; color: var(--accent-color); font-size: 16px; padding: 5px 15px 5px 0; }
         .history-header h2 { margin: 0; flex-grow: 1; text-align: center; font-size: 18px; padding-right: 40px; }
-        
-        .history-list {
-            list-style: none; padding: 0; margin: 0; overflow-y: auto; flex-grow: 1;
-        }
-        .history-item {
-            background-color: var(--card-color); margin-bottom: 8px; border-radius: 10px;
-            padding: 15px; display: flex; justify-content: space-between; align-items: center;
-            cursor: pointer;
-        }
-        .history-item:active { opacity: 0.7; }
+        .history-list { list-style: none; padding: 0; margin: 0; overflow-y: auto; flex-grow: 1; }
+        .history-item { background-color: var(--card-color); margin-bottom: 8px; border-radius: 10px; padding: 15px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; }
         .history-word { font-size: 18px; font-weight: bold; }
         .history-status { font-size: 14px; font-weight: bold; padding: 4px 8px; border-radius: 6px; }
         .status-correct { background-color: rgba(50, 215, 75, 0.2); color: var(--success-color); }
@@ -103,26 +103,29 @@
 </head>
 <body>
 
+<div id="gameModal">
+    <div id="modalTitle">GAME OVER</div>
+    <div id="modalDesc">오답입니다!<br>레벨 1부터 다시 시작합니다.</div>
+    <button id="modalBtn" onclick="closeModal()">다시 도전하기</button>
+</div>
+
 <div id="mainView" class="view active">
-    <div class="control-row">
-        <div class="control-group" style="flex: 1.2;">
-            <label>속도</label>
-            <input type="range" id="speedSlider" min="200" max="1500" value="500" step="50">
-            <span id="speedVal" style="font-size: 12px; min-width: 40px; text-align: right;">500ms</span>
+    
+    <div class="game-dashboard">
+        <div class="stat-box">
+            <span class="stat-title">현재 스테이지</span>
+            <span class="stat-value level-text" id="uiLevel">Level 1</span>
         </div>
-        <div class="control-group">
-            <select id="lengthSelect">
-                <option value="2-3">2~3글자(랜덤)</option>
-                <option value="3-4">3~4글자</option>
-                <option value="5+">5글자 이상</option>
-            </select>
+        <div class="stat-box">
+            <span class="stat-title">연속 정답 (승급조건)</span>
+            <span class="stat-value" id="uiCombo">0 / 3</span>
         </div>
     </div>
 
     <div class="btn-group">
-        <button class="primary" onclick="startNewWord()">새 단어</button>
+        <button class="primary" onclick="startNewWord()">새 단어 시작</button>
         <button id="playPauseBtn" onclick="togglePlayPause()">일시정지</button>
-        <button onclick="showHistoryView()">기록</button>
+        <button onclick="showHistoryView()">기록 보기</button>
     </div>
 
     <div class="card">
@@ -145,11 +148,24 @@
         <button onclick="hideHistoryView()">❮ 뒤로</button>
         <h2>학습 기록</h2>
     </div>
-    <ul class="history-list" id="historyList">
-        </ul>
+    <ul class="history-list" id="historyList"></ul>
 </div>
 
 <script>
+    // --- 게임 레벨 디자인 ---
+    const levels = [
+        { level: 1, speed: 1000, length: '2-3', req: 3 }, // 레벨1: 아주 느림, 2~3글자, 3번 맞추면 승급
+        { level: 2, speed: 800,  length: '2-3', req: 3 }, // 레벨2: 조금 느림, 2~3글자
+        { level: 3, speed: 800,  length: '3-4', req: 3 }, // 레벨3: 조금 느림, 3~4글자
+        { level: 4, speed: 600,  length: '3-4', req: 4 }, // 레벨4: 보통 속도, 3~4글자, 4번 맞춰야 승급
+        { level: 5, speed: 450,  length: '3-4', req: 4 }, // 레벨5: 빠름, 3~4글자
+        { level: 6, speed: 500,  length: '5+',  req: 4 }, // 레벨6: 보통 속도, 5글자 이상 (장문)
+        { level: 7, speed: 300,  length: '5+',  req: 5 }  // 레벨7 (보스): 매우 빠름, 5글자 이상
+    ];
+
+    let currentLevelIdx = 0;
+    let combo = 0;
+    
     let currentWord = "";
     let jamoList = [];
     let cachedFrames = []; 
@@ -168,8 +184,6 @@
     const CHOSUNG = ['ㄱ','ㄲ','ㄴ','ㄷ','ㄸ','ㄹ','ㅁ','ㅂ','ㅃ','ㅅ','ㅆ','ㅇ','ㅈ','ㅉ','ㅊ','ㅋ','ㅌ','ㅍ','ㅎ'];
     const JUNGSUNG = ['ㅏ','ㅐ','ㅑ','ㅒ','ㅓ','ㅔ','ㅕ','ㅖ','ㅗ','ㅘ','ㅙ','ㅚ','ㅛ','ㅜ','ㅝ','ㅞ','ㅟ','ㅠ','ㅡ','ㅢ','ㅣ'];
     const JONGSUNG = ['','ㄱ','ㄲ','ㄳ','ㄴ','ㄵ','ㄶ','ㄷ','ㄹ','ㄺ','ㄻ','ㄼ','ㄽ','ㄾ','ㄿ','ㅀ','ㅁ','ㅂ','ㅄ','ㅅ','ㅆ','ㅇ','ㅈ','ㅊ','ㅋ','ㅌ','ㅍ','ㅎ'];
-    
-    // 파이썬 원본과 100% 동일한 규칙 적용 (쌍자음 (2) 처리 포함)
     const COMPOUND = {
         'ㄳ':['ㄱ','ㅅ'], 'ㄵ':['ㄴ','ㅈ'], 'ㄶ':['ㄴ','ㅎ'], 'ㄺ':['ㄹ','ㄱ'], 'ㄻ':['ㄹ','ㅁ'], 
         'ㄼ':['ㄹ','ㅂ'], 'ㄽ':['ㄹ','ㅅ'], 'ㄾ':['ㄹ','ㅌ'], 'ㄿ':['ㄹ','ㅍ'], 'ㅀ':['ㄹ','ㅎ'], 
@@ -185,7 +199,6 @@
                 let cho = Math.floor(code / 588);
                 let jung = Math.floor((code % 588) / 28);
                 let jong = code % 28;
-                
                 [CHOSUNG[cho], JUNGSUNG[jung], JONGSUNG[jong]].forEach(unit => {
                     if (unit) {
                         if (COMPOUND[unit]) result.push(...COMPOUND[unit]);
@@ -197,13 +210,17 @@
         return result;
     }
 
-    const speedSlider = document.getElementById('speedSlider');
-    const speedVal = document.getElementById('speedVal');
-    speedSlider.addEventListener('input', (e) => speedVal.innerText = e.target.value + 'ms');
+    // 게임 UI 업데이트
+    function updateGameUI() {
+        const lvData = levels[currentLevelIdx];
+        document.getElementById('uiLevel').innerText = `Level ${lvData.level}`;
+        document.getElementById('uiCombo').innerText = `${combo} / ${lvData.req}`;
+    }
+
     document.getElementById('answerInput').addEventListener('keypress', (e) => { if(e.key==='Enter') checkAnswer(); });
 
     async function fetchWord() {
-        const selectedRange = document.getElementById('lengthSelect').value;
+        const selectedRange = levels[currentLevelIdx].length;
         let targetList = fallbackWords[selectedRange]; 
 
         try {
@@ -242,6 +259,7 @@
     async function startNewWord() {
         if(timer) clearInterval(timer);
         resetUIForLoading("단어 찾는 중...");
+        updateGameUI();
         
         currentWord = await fetchWord();
         jamoList = splitHangul(currentWord);
@@ -259,9 +277,11 @@
         isFinished = false;
         
         updatePlayButtonUI();
-        
         renderFrame();
-        timer = setInterval(renderFrame, speedSlider.value);
+        
+        // 현재 레벨에 맞는 속도로 재생
+        const currentSpeed = levels[currentLevelIdx].speed;
+        timer = setInterval(renderFrame, currentSpeed);
     }
 
     function renderFrame() {
@@ -296,9 +316,8 @@
     }
 
     function togglePlayPause() {
-        if (isFinished) {
-            playFromStart();
-        } else {
+        if (isFinished) playFromStart();
+        else {
             isPaused = !isPaused;
             updatePlayButtonUI();
         }
@@ -336,6 +355,7 @@
         updatePlayButtonUI();
     }
 
+    // --- 게임 로직: 정답 확인 및 레벨 관리 ---
     function checkAnswer() {
         let ansInput = document.getElementById('answerInput');
         let ans = ansInput.value.trim();
@@ -344,15 +364,61 @@
         let isCorrect = (ans === currentWord);
         let feedback = document.getElementById('feedback');
         
-        feedback.innerText = isCorrect ? "정답입니다!" : `오답! 정답: ${currentWord}`;
-        feedback.style.color = isCorrect ? "var(--success-color)" : "var(--danger-color)";
-        
-        if(isCorrect) ansInput.blur();
-        
         historyData.push({ word: currentWord, status: isCorrect ? "정답" : "오답" });
         localStorage.setItem('fingerspell_history', JSON.stringify(historyData));
+
+        if (isCorrect) {
+            ansInput.blur();
+            combo++;
+            let req = levels[currentLevelIdx].req;
+            
+            if (combo >= req) {
+                // 승급!
+                currentLevelIdx++;
+                combo = 0;
+                if (currentLevelIdx >= levels.length) {
+                    showModal("🏆 마스터 달성! 🏆", "모든 레벨을 정복했습니다!<br>당신은 진정한 지문자 마스터입니다.", "처음부터 다시하기");
+                    currentLevelIdx = 0; // 초기화
+                } else {
+                    let nextLv = levels[currentLevelIdx].level;
+                    showModal(`🎉 LEVEL UP! 🎉`, `축하합니다!<br><b>[Level ${nextLv}]</b>로 진입합니다.<br>난이도가 상승합니다.`, "다음 레벨 시작");
+                }
+            } else {
+                // 정답 (진행 중)
+                feedback.innerText = "정답! (다음 단어 준비 중...)";
+                feedback.style.color = "var(--success-color)";
+                updateGameUI();
+                // 1.5초 후 다음 단어 자동 시작
+                setTimeout(startNewWord, 1500);
+            }
+        } else {
+            // 오답 -> 게임 오버
+            ansInput.blur();
+            let currentLv = levels[currentLevelIdx].level;
+            currentLevelIdx = 0;
+            combo = 0;
+            updateGameUI();
+            showModal("💀 GAME OVER 💀", `오답입니다! 정답은 [<b>${currentWord}</b>] 였습니다.<br>안타깝게도 [Level ${currentLv}]에서 탈락했습니다.`, "Level 1부터 다시 시작");
+        }
     }
 
+    // 모달(팝업) 제어
+    function showModal(title, desc, btnText) {
+        document.getElementById('modalTitle').innerHTML = title;
+        document.getElementById('modalDesc').innerHTML = desc;
+        document.getElementById('modalBtn').innerText = btnText;
+        document.getElementById('gameModal').style.display = 'flex';
+        
+        // 모달 뒤의 원래 UI 리셋
+        resetUIForLoading("시작 버튼을<br>눌러주세요");
+    }
+
+    function closeModal() {
+        document.getElementById('gameModal').style.display = 'none';
+        updateGameUI();
+    }
+
+    // --- 기록 화면 제어 ---
     function showHistoryView() {
         document.getElementById('mainView').classList.remove('active');
         document.getElementById('historyView').classList.add('active');
@@ -396,8 +462,19 @@
         jamoList = splitHangul(currentWord);
         
         cachedFrames = await preloadAllImages(jamoList);
-        playFromStart();
+        // 기록에서 단어를 볼 때는 가장 기본 속도(Level 1 속도)로 재생합니다.
+        const replaySpeed = levels[0].speed;
+        
+        currentIdx = 0;
+        isPaused = false;
+        isFinished = false;
+        updatePlayButtonUI();
+        renderFrame();
+        timer = setInterval(renderFrame, replaySpeed);
     }
+
+    // 초기화
+    updateGameUI();
 </script>
 </body>
 </html>
