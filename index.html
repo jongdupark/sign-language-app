@@ -42,12 +42,12 @@
         .stat-value { font-size: 18px; font-weight: 800; color: white; }
         .level-text { color: var(--warning-color); }
 
-        /* 버튼 그룹 */
-        .btn-group { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+        /* 버튼 그룹 (3개 -> 2개로 변경) */
+        .btn-group { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
         button {
             background-color: var(--card-color); color: var(--accent-color);
             border: none; border-radius: 10px; padding: 12px 5px;
-            font-size: 14px; font-weight: bold; cursor: pointer; text-align: center;
+            font-size: 15px; font-weight: bold; cursor: pointer; text-align: center;
         }
         button.primary { background-color: var(--accent-color); color: white; }
         button:active { opacity: 0.7; }
@@ -59,10 +59,14 @@
             flex-grow: 1; justify-content: space-between; overflow: hidden;
         }
         
+        /* 터치 가능한 이미지 영역 (시각적 피드백 추가) */
         .image-wrapper {
             width: 100%; flex-grow: 1; display: flex; justify-content: center; align-items: center;
             background-color: #000; border-radius: 12px; overflow: hidden; position: relative;
+            cursor: pointer; transition: transform 0.1s;
         }
+        .image-wrapper:active { transform: scale(0.98); } /* 누를 때 살짝 들어가는 효과 */
+        
         #mainImage { width: 100%; height: 100%; object-fit: contain; display: none; }
         #placeholderText { position: absolute; width: 100%; text-align: center; font-size: 24px; color: #8E8E93; font-weight: bold; }
         .large-text { font-size: 120px !important; color: white !important; }
@@ -89,7 +93,7 @@
             font-size: 18px; border-radius: 30px; border: none; font-weight: bold;
         }
 
-        /* 기록 화면 스타일 (기존 동일) */
+        /* 기록 화면 스타일 */
         .history-header { display: flex; align-items: center; padding: 10px 0; border-bottom: 1px solid #3E3E42; }
         .history-header button { background: none; border: none; color: var(--accent-color); font-size: 16px; padding: 5px 15px 5px 0; }
         .history-header h2 { margin: 0; flex-grow: 1; text-align: center; font-size: 18px; padding-right: 40px; }
@@ -106,7 +110,7 @@
 <div id="gameModal">
     <div id="modalTitle">GAME OVER</div>
     <div id="modalDesc">오답입니다!<br>레벨 1부터 다시 시작합니다.</div>
-    <button id="modalBtn" onclick="closeModal()">다시 도전하기</button>
+    <button id="modalBtn" onclick="closeModalAndStart()">다시 도전하기</button>
 </div>
 
 <div id="mainView" class="view active">
@@ -123,15 +127,14 @@
     </div>
 
     <div class="btn-group">
-        <button class="primary" onclick="startNewWord()">새 단어 시작</button>
         <button id="playPauseBtn" onclick="togglePlayPause()">일시정지</button>
         <button onclick="showHistoryView()">기록 보기</button>
     </div>
 
     <div class="card">
-        <div class="image-wrapper" id="imageWrapper">
+        <div class="image-wrapper" id="imageWrapper" onclick="handleImageClick()">
             <img id="mainImage" alt="수어 이미지">
-            <span id="placeholderText">시작 버튼을<br>눌러주세요</span>
+            <span id="placeholderText">화면을 터치하여<br>시작하세요 👆</span>
         </div>
         
         <div id="feedback"></div>
@@ -152,15 +155,14 @@
 </div>
 
 <script>
-    // --- 게임 레벨 디자인 ---
     const levels = [
-        { level: 1, speed: 1000, length: '2-3', req: 3 }, // 레벨1: 아주 느림, 2~3글자, 3번 맞추면 승급
-        { level: 2, speed: 800,  length: '2-3', req: 3 }, // 레벨2: 조금 느림, 2~3글자
-        { level: 3, speed: 800,  length: '3-4', req: 3 }, // 레벨3: 조금 느림, 3~4글자
-        { level: 4, speed: 600,  length: '3-4', req: 4 }, // 레벨4: 보통 속도, 3~4글자, 4번 맞춰야 승급
-        { level: 5, speed: 450,  length: '3-4', req: 4 }, // 레벨5: 빠름, 3~4글자
-        { level: 6, speed: 500,  length: '5+',  req: 4 }, // 레벨6: 보통 속도, 5글자 이상 (장문)
-        { level: 7, speed: 300,  length: '5+',  req: 5 }  // 레벨7 (보스): 매우 빠름, 5글자 이상
+        { level: 1, speed: 1000, length: '2-3', req: 3 }, 
+        { level: 2, speed: 800,  length: '2-3', req: 3 }, 
+        { level: 3, speed: 800,  length: '3-4', req: 3 }, 
+        { level: 4, speed: 600,  length: '3-4', req: 4 }, 
+        { level: 5, speed: 450,  length: '3-4', req: 4 }, 
+        { level: 6, speed: 500,  length: '5+',  req: 4 }, 
+        { level: 7, speed: 300,  length: '5+',  req: 5 }  
     ];
 
     let currentLevelIdx = 0;
@@ -173,6 +175,7 @@
     let timer = null;
     let isPaused = false;
     let isFinished = false; 
+    let isAnsweredCorrectly = false; // 정답 여부 체크 변수
     let historyData = JSON.parse(localStorage.getItem('fingerspell_history')) || [];
 
     const fallbackWords = {
@@ -210,7 +213,6 @@
         return result;
     }
 
-    // 게임 UI 업데이트
     function updateGameUI() {
         const lvData = levels[currentLevelIdx];
         document.getElementById('uiLevel').innerText = `Level ${lvData.level}`;
@@ -218,6 +220,28 @@
     }
 
     document.getElementById('answerInput').addEventListener('keypress', (e) => { if(e.key==='Enter') checkAnswer(); });
+
+    // --- 화면 터치 컨트롤 로직 ---
+    function handleImageClick() {
+        // 1. 아직 게임을 시작하지 않은 초기 상태면 바로 시작
+        if (currentWord === "") {
+            startNewWord();
+            return;
+        }
+        
+        // 2. 정답을 맞힌 상태라면 언제든 터치해서 다음 문제로 넘어감
+        if (isAnsweredCorrectly) {
+            startNewWord();
+            return;
+        }
+        
+        // 3. 정답을 아직 못 맞췄는데 재생이 끝났다면, 건너뛰기 허용 (대신 콤보는 초기화)
+        if (isFinished) {
+            combo = 0; 
+            updateGameUI();
+            startNewWord();
+        }
+    }
 
     async function fetchWord() {
         const selectedRange = levels[currentLevelIdx].length;
@@ -275,11 +299,11 @@
         currentIdx = 0;
         isPaused = false;
         isFinished = false;
+        isAnsweredCorrectly = false; // 정답 여부 초기화
         
         updatePlayButtonUI();
         renderFrame();
         
-        // 현재 레벨에 맞는 속도로 재생
         const currentSpeed = levels[currentLevelIdx].speed;
         timer = setInterval(renderFrame, currentSpeed);
     }
@@ -308,8 +332,9 @@
             isFinished = true;
             updatePlayButtonUI();
             
+            // 재생이 끝났을 때 화면에 터치 안내 추가
             mainImage.style.display = 'none';
-            placeholder.innerHTML = "입력 대기 중";
+            placeholder.innerHTML = "입력 대기 중<br><span style='font-size:14px; font-weight:normal; margin-top:15px; display:block;'>화면 터치 시 다음으로 건너뜁니다 (콤보 초기화)</span>";
             placeholder.classList.remove('large-text');
             placeholder.style.display = 'block';
         }
@@ -355,11 +380,10 @@
         updatePlayButtonUI();
     }
 
-    // --- 게임 로직: 정답 확인 및 레벨 관리 ---
     function checkAnswer() {
         let ansInput = document.getElementById('answerInput');
         let ans = ansInput.value.trim();
-        if (!currentWord) return;
+        if (!currentWord || isAnsweredCorrectly) return; // 이미 정답 맞춘 상태면 무시
         
         let isCorrect = (ans === currentWord);
         let feedback = document.getElementById('feedback');
@@ -369,27 +393,38 @@
 
         if (isCorrect) {
             ansInput.blur();
+            isAnsweredCorrectly = true;
+            
+            // 재생 중이었다면 영상 즉시 정지
+            clearInterval(timer);
+            isFinished = true;
+            updatePlayButtonUI();
+
             combo++;
             let req = levels[currentLevelIdx].req;
             
             if (combo >= req) {
-                // 승급!
+                // 승급
                 currentLevelIdx++;
                 combo = 0;
                 if (currentLevelIdx >= levels.length) {
                     showModal("🏆 마스터 달성! 🏆", "모든 레벨을 정복했습니다!<br>당신은 진정한 지문자 마스터입니다.", "처음부터 다시하기");
-                    currentLevelIdx = 0; // 초기화
+                    currentLevelIdx = 0; 
                 } else {
                     let nextLv = levels[currentLevelIdx].level;
-                    showModal(`🎉 LEVEL UP! 🎉`, `축하합니다!<br><b>[Level ${nextLv}]</b>로 진입합니다.<br>난이도가 상승합니다.`, "다음 레벨 시작");
+                    showModal(`🎉 LEVEL UP! 🎉`, `축하합니다!<br><b>[Level ${nextLv}]</b>로 진입합니다.<br>난이도가 상승합니다.`, "터치하여 다음 레벨 시작");
                 }
             } else {
-                // 정답 (진행 중)
-                feedback.innerText = "정답! (다음 단어 준비 중...)";
+                // 일반 정답
+                feedback.innerText = "정답입니다!";
                 feedback.style.color = "var(--success-color)";
                 updateGameUI();
-                // 1.5초 후 다음 단어 자동 시작
-                setTimeout(startNewWord, 1500);
+                
+                // 화면에 시원하게 터치 유도 메시지 표시
+                document.getElementById('mainImage').style.display = 'none';
+                document.getElementById('placeholderText').innerHTML = "🎉 정답! 🎉<br><span style='font-size:18px; color:var(--success-color); margin-top:15px; display:block;'>화면을 터치하여 다음 진행 👆</span>";
+                document.getElementById('placeholderText').classList.remove('large-text');
+                document.getElementById('placeholderText').style.display = 'block';
             }
         } else {
             // 오답 -> 게임 오버
@@ -408,17 +443,15 @@
         document.getElementById('modalDesc').innerHTML = desc;
         document.getElementById('modalBtn').innerText = btnText;
         document.getElementById('gameModal').style.display = 'flex';
-        
-        // 모달 뒤의 원래 UI 리셋
-        resetUIForLoading("시작 버튼을<br>눌러주세요");
+        resetUIForLoading("화면을 터치하여<br>시작하세요 👆");
     }
 
-    function closeModal() {
+    function closeModalAndStart() {
         document.getElementById('gameModal').style.display = 'none';
         updateGameUI();
+        startNewWord(); // 버튼 누르면 모달 닫히며 즉시 새 단어 시작
     }
 
-    // --- 기록 화면 제어 ---
     function showHistoryView() {
         document.getElementById('mainView').classList.remove('active');
         document.getElementById('historyView').classList.add('active');
@@ -460,20 +493,19 @@
         
         currentWord = word;
         jamoList = splitHangul(currentWord);
-        
         cachedFrames = await preloadAllImages(jamoList);
-        // 기록에서 단어를 볼 때는 가장 기본 속도(Level 1 속도)로 재생합니다.
+        
         const replaySpeed = levels[0].speed;
         
         currentIdx = 0;
         isPaused = false;
         isFinished = false;
+        isAnsweredCorrectly = false;
         updatePlayButtonUI();
         renderFrame();
         timer = setInterval(renderFrame, replaySpeed);
     }
 
-    // 초기화
     updateGameUI();
 </script>
 </body>
