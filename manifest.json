@@ -1,6 +1,6 @@
 {
-  "name": "지문자 마스터",
-  "short_name": "지문자",
+  "name": "지문자 연습",
+  "short_name": "지문자 연습",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#000000",
